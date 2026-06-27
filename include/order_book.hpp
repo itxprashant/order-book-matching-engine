@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <optional>
+#include <span>
 
 namespace ob {
 
@@ -14,9 +16,27 @@ struct Order {
     int64_t quantity;
 };
 
+struct Fill {
+    uint64_t maker_id;
+    uint64_t taker_id;
+    int64_t price;
+    int64_t quantity;
+};
+
+struct AddResult {
+    std::span<const Fill> fills;  // valid until the next mutating call
+    int64_t remaining_qty;
+};
+
 class OrderBook {
 public:
-    void add(const Order& order);
+    OrderBook();
+    ~OrderBook();
+
+    OrderBook(const OrderBook&) = delete;
+    OrderBook& operator=(const OrderBook&) = delete;
+
+    AddResult add(const Order& order);
     void cancel(uint64_t order_id);
     void modify(uint64_t order_id, int64_t new_price, int64_t new_quantity);
 
@@ -24,6 +44,8 @@ public:
     std::optional<Order> best_ask() const;
 
 private:
+    struct Impl;
+    std::unique_ptr<Impl> impl_;
 };
 
 }  // namespace ob
